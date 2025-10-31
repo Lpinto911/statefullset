@@ -1,55 +1,32 @@
-name: Deploy MongoDB to OpenShift
+name: CI-DockerBuild
 
-on:
+on: 
   push:
-    branches:
-      - main
-
+    branches: ["main"]
+  workflow_dispatch:
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Clonar el repositorio
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # 2️⃣ Instalar OpenShift CLI
-      - name: Install OpenShift CLI
+      - name: Install OC CLI
         run: |
           curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz | tar xz
           sudo mv oc /usr/local/bin/
           oc version
-
-      # 3️⃣ Loguearse en OpenShift usando token
-      - name: Log in OpenShift
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.12.0
+      - name: Log in Openshift
         uses: redhat-actions/oc-login@v1
         with:
           openshift_server_url: https://api.rm1.0a51.p1.openshiftapps.com:6443
           openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
 
-      # 4️⃣ Seleccionar el proyecto/OpenShift namespace
-      - name: Set OpenShift project
-        run: oc project lpintofsgrp-dev
-
-      # 5️⃣ Instalar Helm
-      - name: Install Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: v3.12.0
-
-      # 6️⃣ Agregar repositorio de Bitnami
-      - name: Add Bitnami Helm repo
-        run: helm repo add bitnami https://charts.bitnami.com/bitnami
-
-      # 7️⃣ Desplegar MongoDB usando values.yaml
-      - name: Deploy MongoDB with Helm
+      - name: Deploy files
         run: |
-          helm upgrade --install mongodb bitnami/mongodb \
-            -f values.yaml
-          
-      # 8️⃣ (Opcional) Mostrar secret generado por MongoDB
-      - name: Show generated MongoDB root password
-        run: |
-          echo "MongoDB root password:"
-          oc get secret mongodb -o jsonpath="{.data.mongodb-root-password}" | base64 --decode
+          helm upgrade --install my-mongodb oci://registry-1.docker.io/cloudpirates/mongodb -f values.yaml
