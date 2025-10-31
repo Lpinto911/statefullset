@@ -30,7 +30,7 @@ jobs:
 
       # 4️⃣ Seleccionar el proyecto/OpenShift namespace
       - name: Set OpenShift project
-        run: oc project my-project-name
+        run: oc project lpintofsgrp-dev
 
       # 5️⃣ Instalar Helm
       - name: Install Helm
